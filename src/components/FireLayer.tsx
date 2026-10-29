@@ -7,10 +7,13 @@ export default function FireLayer() {
 
   return (
     <div aria-hidden className="pointer-events-none">
+      {/* 1. Calque de lueur principale lié au scroll */}
       <motion.div
         style={{ opacity: glow }}
         className="fixed inset-0 z-0 bg-[radial-gradient(ellipse_90%_55%_at_50%_108%,rgba(224,112,47,.6),transparent_70%),radial-gradient(ellipse_50%_30%_at_15%_100%,rgba(180,50,20,.4),transparent_70%),radial-gradient(ellipse_50%_30%_at_85%_100%,rgba(180,50,20,.35),transparent_70%)]"
       />
+
+      {/* 2. Image de fond fixe */}
       <div
         aria-hidden="true"
         className="fixed inset-x-0 bottom-0 z-1 h-[70vh] bg-no-repeat"
@@ -31,6 +34,26 @@ export default function FireLayer() {
             `,
           backgroundPosition: "top, center, center bottom",
           backgroundSize: "100% 100%, 100% 100%, cover",
+        }}
+      />
+
+      {/* 3. Calque de flammes/lumière scintillante en superposition */}
+      <motion.div
+        aria-hidden="true"
+        className="fixed inset-x-0 bottom-0 z-2 h-[70vh] bg-no-repeat mix-blend-color-dodge opacity-40 pointer-events-none"
+        style={{
+          backgroundImage: `url('/backdrop.png')`,
+          backgroundPosition: "center bottom",
+          backgroundSize: "cover",
+        }}
+        animate={{
+          opacity: [0.3, 0.6, 0.35, 0.55, 0.3],
+          scale: [1, 1.02, 1, 1.01, 1],
+        }}
+        transition={{
+          duration: 4,
+          repeat: Infinity,
+          ease: "easeInOut",
         }}
       />
     </div>
