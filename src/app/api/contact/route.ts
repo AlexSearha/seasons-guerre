@@ -27,7 +27,7 @@ export async function POST(req: Request) {
   const { data, error } = await resend.emails.send({
     from: "CONTACT | Seasons Novel <contact@seasonsnovel.com>",
     to: "seasons_project@hotmail.com",
-    subject: "Hello world",
+    subject: sujet || `Nouveau message de ${nom}`,
     html: `
         <div style="font-family: sans-serif; padding: 20px;">
           <h2>Nouveau message de contact</h2>

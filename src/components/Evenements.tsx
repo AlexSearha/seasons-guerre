@@ -1,6 +1,29 @@
 "use client";
 import { ArrowUpRight } from "lucide-react";
-import { EventItem, events } from "../../data/events";
+import { useEffect, useState } from "react";
+
+// Structure brute venant de l'API / Excel
+export interface ApiEventItem {
+  name: string;
+  address: string;
+  zipcode?: string | number;
+  city: string;
+  date: string; // Attendu en texte "DD/MM/YYYY" (ex: "15/07/2027")
+  time?: string; // Attendu en texte "HH:MM" (ex: "15:30")
+  link?: string;
+  "image-link"?: string;
+}
+
+// Structure formatée pour l'affichage UI
+export interface EventItem {
+  id: string | number;
+  title: string;
+  venue: string;
+  city: string;
+  date: string; // Converti au format ISO YYYY-MM-DD pour le tri
+  time?: string;
+  url?: string;
+}
 
 const MONTHS = [
   "janv.",
@@ -17,19 +40,33 @@ const MONTHS = [
   "déc.",
 ];
 
+// Parser adapté pour le format "DD/MM/YYYY" ou "YYYY-MM-DD" par sécurité
 const parse = (d: string) => {
+  if (!d || typeof d !== "string") return { y: 1970, m: 1, day: 1 };
+
+  // Si la date est au format français "DD/MM/YYYY"
+  if (d.includes("/")) {
+    const [day, m, y] = d.split("/").map(Number);
+    return { y, m, day };
+  }
+
+  // Fallback si format ISO "YYYY-MM-DD"
   const [y, m, day] = d.split("-").map(Number);
   return { y, m, day };
 };
+
 const daysUntil = (d: string) => {
   const { y, m, day } = parse(d);
+  if (!y || !m || !day) return -1;
   return Math.ceil((new Date(y, m - 1, day).getTime() - Date.now()) / 864e5);
 };
+
 const countdown = (j: number) =>
   j <= 0 ? "Aujourd’hui" : j === 1 ? "Demain" : `J−${j}`;
 
 function Ticket({ e, i }: { e: EventItem; i: number }) {
   const { y, m, day } = parse(e.date);
+
   return (
     <li
       style={{ top: `calc(5.5rem + ${i * 1.1}rem)` }}
@@ -44,7 +81,9 @@ function Ticket({ e, i }: { e: EventItem; i: number }) {
           aria-hidden
           className="absolute -right-4 -bottom-4 size-8 rounded-full bg-bg max-sm:hidden"
         />
-        <span className="font-ui text-lg font-semibold">{MONTHS[m - 1]}</span>
+        <span className="font-ui text-lg font-semibold">
+          {MONTHS[(m || 1) - 1]}
+        </span>
         <time
           dateTime={e.date}
           className="font-fat text-7xl leading-none max-sm:text-5xl"
@@ -66,6 +105,8 @@ function Ticket({ e, i }: { e: EventItem; i: number }) {
         {e.url && (
           <a
             href={e.url}
+            target="_blank"
+            rel="noopener noreferrer"
             className="inline-flex items-center gap-2 self-start rounded-full bg-ink px-5 py-3 font-ui font-semibold text-sepia transition hover:bg-black"
           >
             Réserver <ArrowUpRight size={18} />
@@ -83,9 +124,59 @@ function Ticket({ e, i }: { e: EventItem; i: number }) {
 }
 
 export default function Evenements() {
+  const [events, setEvents] = useState<EventItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/events")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && Array.isArray(data.events)) {
+          const formattedEvents: EventItem[] = data.events.map(
+            (raw: ApiEventItem, index: number) => {
+              let isoDate = "";
+
+              if (raw.date) {
+                const dateStr = String(raw.date).trim();
+
+                // Conversion du format "DD/MM/YYYY" vers "YYYY-MM-DD" pour le tri correct
+                if (dateStr.includes("/")) {
+                  const parts = dateStr.split("/");
+                  if (parts.length === 3) {
+                    const [d, m, y] = parts;
+                    isoDate = `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
+                  }
+                } else {
+                  isoDate = dateStr;
+                }
+              }
+
+              return {
+                id: index,
+                title: raw.name,
+                venue: raw.address,
+                city: raw.city,
+                date: isoDate,
+                time: raw.time ? String(raw.time).trim() : undefined,
+                url: raw.link,
+              };
+            },
+          );
+
+          setEvents(formattedEvents);
+        }
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("Erreur chargement événements:", err);
+        setLoading(false);
+      });
+  }, []);
+
   const upcoming = events
     .filter((e) => daysUntil(e.date) >= 0)
     .sort((a, b) => a.date.localeCompare(b.date));
+
   return (
     <section
       id="events"
@@ -96,7 +187,12 @@ export default function Evenements() {
         <h2 className="font-fat text-[clamp(3.4rem,12vw,10rem)] leading-[.88] text-hi">
           Événements
         </h2>
-        {upcoming.length > 0 ? (
+
+        {loading ? (
+          <div className="mt-[8vh] text-center font-ui text-xl opacity-60">
+            Chargement des événements...
+          </div>
+        ) : upcoming.length > 0 ? (
           <ul className="mt-[8vh]">
             {upcoming.map((e, i) => (
               <Ticket key={e.id} e={e} i={i} />
