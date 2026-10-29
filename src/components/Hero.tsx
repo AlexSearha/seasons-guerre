@@ -10,7 +10,7 @@ export default function Hero() {
       </p>
       <h1
         aria-label="1871"
-        className="flex font-fat text-[clamp(9rem,38vw,36rem)] leading-[.82] tracking-[-.03em] text-hi [text-shadow:0_0_120px_rgba(224,112,47,.35)]"
+        className="flex font-fat text-[clamp(9rem,38vw,36rem)] leading-[.82] tracking-[-.008em] text-hi [text-shadow:0_0_120px_rgba(224,112,47,.35)]"
       >
         {"1871".split("").map((d, i) => (
           <motion.span
