@@ -1,8 +1,8 @@
 const links = [
   { href: "#recit", label: "Le récit" },
   { href: "#ecouter", label: "Écouter" },
-  { href: "#events", label: "Concerts" },
-  { href: "#contact", label: "Nous écrire" },
+  { href: "#events", label: "Événements" },
+  { href: "#contact", label: "Contact" },
 ];
 
 export default function Dock() {
