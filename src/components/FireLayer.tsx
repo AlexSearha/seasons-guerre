@@ -1,9 +1,81 @@
 "use client";
-import { motion, useScroll, useTransform } from "motion/react";
+import {
+  motion,
+  useReducedMotion,
+  useScroll,
+  useTransform,
+} from "motion/react";
+import { useEffect, useRef } from "react";
+
+type Ember = {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  r: number;
+  a: number;
+  d: number;
+};
 
 export default function FireLayer() {
   const { scrollYProgress } = useScroll();
   const glow = useTransform(scrollYProgress, [0, 1], [0.12, 1]);
+  const canvas = useRef<HTMLCanvasElement>(null);
+  const reduce = useReducedMotion();
+
+  useEffect(() => {
+    const cv = canvas.current;
+    const cx = cv?.getContext("2d");
+    if (!cv || !cx || reduce) return;
+    let W = 0,
+      H = 0,
+      raf = 0;
+    const ps: Ember[] = [];
+    const size = () => {
+      W = cv.width = innerWidth;
+      H = cv.height = innerHeight;
+    };
+    size();
+    addEventListener("resize", size);
+    const loop = () => {
+      cx.clearRect(0, 0, W, H);
+      let spawn = 0.25 + scrollYProgress.get() * 2.2;
+      while (spawn > 0) {
+        if (Math.random() < spawn && ps.length < 220)
+          ps.push({
+            x: Math.random() * W,
+            y: H + 10,
+            vx: (Math.random() - 0.5) * 0.6,
+            vy: -(0.5 + Math.random() * 1.6),
+            r: 0.6 + Math.random() * 2,
+            a: 0.9,
+            d: 0.003 + Math.random() * 0.006,
+          });
+        spawn -= 1;
+      }
+      cx.globalCompositeOperation = "lighter";
+      for (let i = ps.length - 1; i >= 0; i--) {
+        const p = ps[i];
+        p.x += p.vx + Math.sin(p.y * 0.02) * 0.3;
+        p.y += p.vy;
+        p.a -= p.d;
+        if (p.a <= 0 || p.y < -10) {
+          ps.splice(i, 1);
+          continue;
+        }
+        cx.fillStyle = `rgba(240,${110 + ((p.a * 60) | 0)},50,${p.a})`;
+        cx.beginPath();
+        cx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        cx.fill();
+      }
+      raf = requestAnimationFrame(loop);
+    };
+    loop();
+    return () => {
+      cancelAnimationFrame(raf);
+      removeEventListener("resize", size);
+    };
+  }, [reduce, scrollYProgress]);
 
   return (
     <div aria-hidden className="pointer-events-none">
@@ -56,6 +128,7 @@ export default function FireLayer() {
           ease: "easeInOut",
         }}
       />
+      <canvas ref={canvas} className="fixed inset-0 z-2" />
     </div>
   );
 }
