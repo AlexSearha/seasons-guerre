@@ -10,6 +10,7 @@ import {
 } from "motion/react";
 import { useRef } from "react";
 import { aproposA, aproposB, intro, projet, type Para } from "@/data/story";
+import Image from "next/image";
 
 type W = { w: string; b?: boolean };
 
@@ -100,7 +101,7 @@ function Livret() {
         mx.set(0);
         my.set(0);
       }}
-      className="relative mb-[14vh] flex w-full max-w-[540px] items-center gap-6 bg-sepia p-5 text-ink shadow-[0_30px_60px_rgba(0,0,0,.6)] outline outline-1 -outline-offset-8 outline-ink max-sm:flex-col max-sm:items-start"
+      className="relative mb-[14vh] flex w-full max-w-135 items-center gap-6 bg-sepia p-5 text-ink shadow-[0_30px_60px_rgba(0,0,0,.6)] outline outline-1 -outline-offset-8 outline-ink max-sm:flex-col max-sm:items-start"
     >
       <div
         role="img"
@@ -134,11 +135,21 @@ function Livret() {
 }
 
 export default function Story() {
+  const logoRef = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: logoRef,
+    offset: ["start 0.9", "center 0.6"],
+  });
+
+  const opacity = useTransform(scrollYProgress, [0, 1], [0, 1]);
+  const scale = useTransform(scrollYProgress, [0, 1], [0.9, 1]);
+  const y = useTransform(scrollYProgress, [0, 1], [30, 0]);
+
   return (
     <article
       id="recit"
       aria-label="Le récit"
-      className="mx-auto max-w-[1180px] px-[clamp(1.1rem,5vw,3rem)] pt-[6vh] pb-[12vh]"
+      className="mx-auto max-w-295 px-[clamp(1.1rem,5vw,3rem)] pt-[6vh] pb-[20vh]"
     >
       <Chapter paras={intro} />
       <Ornament />
@@ -147,6 +158,38 @@ export default function Story() {
       <Chapter paras={aproposA} />
       <Livret />
       <Chapter paras={aproposB} />
+
+      {/* Section Finale - Effet Wouah Immersif optimisé mobile */}
+      <div
+        ref={logoRef}
+        className="relative mt-[8vh] md:mt-[16vh] flex flex-col justify-center items-center py-10 md:py-20 overflow-hidden rounded-2xl bg-[radial-gradient(ellipse_at_center,rgba(138,42,18,0.25)_0%,transparent_70%)]"
+      >
+        {/* Lueur incandescente adaptée au mobile */}
+        <div className="absolute w-48 h-48 md:w-64 md:h-64 bg-ember/15 rounded-full blur-3xl pointer-events-none" />
+
+        <motion.div
+          style={{ opacity, scale, y }}
+          className="relative z-10 flex flex-col items-center text-center px-4"
+        >
+          {/* Logo redimensionné dynamiquement (plus petit sur mobile) */}
+          <div className="drop-shadow-[0_0_25px_rgba(224,112,47,0.3)] transition-transform duration-700 hover:scale-105">
+            <Image
+              src="/logo-seasons.png"
+              alt="Seasons"
+              width={260}
+              height={260}
+              priority
+              className="w-auto h-auto max-w-[170px] md:max-w-[260px]"
+            />
+          </div>
+
+          <div className="w-12 md:w-16 h-px bg-lo/40 my-4 md:my-6" />
+
+          <span className="text-xs md:text-base tracking-[0.2em] md:tracking-[0.25em] uppercase text-lo font-ui opacity-90">
+            Une création originale par seasons
+          </span>
+        </motion.div>
+      </div>
     </article>
   );
 }
